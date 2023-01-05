@@ -105,6 +105,23 @@ table {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
+table thead {
+    display: block;
+}
+
+table tbody {
+    display: block;
+    max-height: min(50vh, 500px);
+    overflow-y:auto;
+}
+
+table tr {
+    display: flex;
+}
+thead th, tbody td {
+    width: 50%;
+}
+
 table thead tr {
     background-color: var(--color-primary);
     color: white;
