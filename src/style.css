@@ -1,0 +1,170 @@
+* {
+  font-family: 'Poppins', arial;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-primary: hsl(9, 86%, 30%);
+  --color-danger: hsl(348, 83%, 30%);
+  --color-darken-danger: hsl(348, 83%, 20%);
+  --color-success: hsl(90, 40%, 30%);
+  --color-darken-success: hsl(90, 40%, 20%);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+
+#form {
+  margin: 0 auto;
+}
+
+.form__title {
+  margin: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+select,
+input,
+textarea {
+  padding: 7px 15px;
+  border:1px solid gray;
+  border-radius: 5px;
+  outline: none;
+}
+
+
+
+.container {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 50px;
+  align-items: flex-start;
+  flex-direction: row;
+}
+
+.notes__window {
+  flex: 2;
+  padding: 30px 45px;
+  border-radius: 0px;
+  max-width: 600px;
+}
+
+#notesInput {
+  resize:none;
+  max-height: min(20vh, 300px);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.form__actions {
+  display: flex;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 7px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color .2s ease;
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+  margin-right: 10px;
+}
+.btn-danger:hover {
+  background-color: var(--color-darken-danger);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+.btn-success:hover {
+  background-color: var(--color-darken-success);
+
+}
+
+table {
+  flex: 3;
+  margin-top: 30px;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  min-width: 320px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+table thead {
+  display: block;
+}
+
+table tbody {
+  display: block;
+  max-height: min(50vh, 500px);
+  overflow-y:auto;
+}
+
+table tr {
+  display: flex;
+}
+thead th, tbody td {
+  width: 50%;
+}
+
+table thead tr {
+  background-color: var(--color-primary);
+  color: white;
+  text-align: left;
+}
+
+table th,
+table td {
+  padding: 12px 15px;
+}
+
+table tbody tr {
+  border-bottom: 1px solid #dddddd;
+  cursor: pointer;
+  transition: background-color .2s ease-out;
+}
+
+table tbody tr:nth-of-type(even) {
+  background-color: hsl(0, 0%, 95%);
+}
+
+table {
+  border-bottom: 2px solid var(--color-primary);
+}
+
+table tbody tr.no-hover {
+  cursor:unset;
+}
+
+table tbody tr:not(.no-hover):hover {
+  background-color: hsl(9, 86%, 80%);
+}
+
+@media screen and (max-width: 769px) {
+
+  .notes__window {
+      padding: 0;
+      width: 100%;
+  }
+  .container {
+      padding: 35px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+  }
+}
