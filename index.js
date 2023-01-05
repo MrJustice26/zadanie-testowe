@@ -1,4 +1,5 @@
 const $form = document.querySelector("#form");
+
 const $voivodeshipsSelect = document.querySelector("#voivodeshipsSelect");
 const $citiesSelect = document.querySelector("#citiesSelect");
 const $streetInput = document.querySelector("#streetInput");
@@ -12,15 +13,10 @@ let notes = [];
 
 let selectedVoivodeship = {};
 let selectedCity = {};
-let addressValue = "";
-let notesValue = "";
+let selectedNote = {};
 
 window.addEventListener("load", init);
-$form.addEventListener("submit", submitForm);
-$form.addEventListener("reset", clearForm);
-$notesInput.addEventListener("input", function () {
-  adjustTextArea(this);
-});
+
 function init() {
   initVoivodeships();
   initCities();
@@ -29,7 +25,38 @@ function init() {
   fillForm();
 }
 
+$form.addEventListener("submit", submitForm);
+$form.addEventListener("reset", clearForm);
+
 $voivodeshipsSelect.addEventListener("change", handleVoivodeshipsSelectChange);
+
+$citiesSelect.addEventListener("change", handleCitiesSelectChange);
+
+$streetInput.addEventListener("input", function () {
+  $streetInput.value = this.value;
+});
+
+$notesInput.addEventListener("input", function () {
+  adjustTextArea(this);
+});
+$notesInput.addEventListener("input", function () {
+  $notesInput.value = this.value;
+});
+
+// ============== LOGIKA ZWIĄZANA Z WOJEWÓDZTWAMI ==============
+
+async function initVoivodeships() {
+  const receivedVoivodeships = await fetchGET(
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
+  );
+
+  renderVoivodeshipsList(receivedVoivodeships, $voivodeshipsSelect);
+  voivodeships = receivedVoivodeships;
+}
+
+function renderVoivodeshipsList(data, $parent) {
+  renderOptions(data, $parent, "Wybierz Województwo");
+}
 
 function handleVoivodeshipsSelectChange() {
   selectedVoivodeship = voivodeships.find(
@@ -39,54 +66,10 @@ function handleVoivodeshipsSelectChange() {
   renderCitiesList(desiredCities, $citiesSelect);
 }
 
-$citiesSelect.addEventListener("change", handleCitiesSelectChange);
-
-function handleCitiesSelectChange() {
-  selectedCity = cities[selectedVoivodeship.id].find(
-    (city) => city.unique_name === this.value
-  );
-}
-
-$streetInput.addEventListener("input", function () {
-  addressValue = this.value;
-});
-
-$notesInput.addEventListener("input", function () {
-  notesValue = this.value;
-});
-
-// Ładowanie oraz dodanie do selektora województw
-async function initVoivodeships() {
-  const receivedVoivodeships = await fetchUrlGET(
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
-  );
-
-  renderVoivodeshipsList(receivedVoivodeships, $voivodeshipsSelect);
-  voivodeships = receivedVoivodeships;
-}
-
-function renderOptions(options, $parent, defaultOption) {
-  const optionsArrayToHTML = [
-    `<option value="" disabled selected>${
-      defaultOption || "Wybierz opcję"
-    }</option>`,
-  ];
-  options.forEach((option) => {
-    optionsArrayToHTML.push(
-      `<option value=${option.unique_name}>${option.name}</option>`
-    );
-  });
-
-  $parent.innerHTML = optionsArrayToHTML.join();
-}
-
-async function fetchUrlGET(url) {
-  const response = await fetch(url);
-  return await response.json();
-}
+// ============== LOGIKA ZWIĄZANA Z MIASTAMI ==============
 
 async function initCities() {
-  const receivedCities = await fetchUrlGET(
+  const receivedCities = await fetchGET(
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
   );
   const citiesSegregated = segregateCities(receivedCities);
@@ -97,14 +80,6 @@ async function initCities() {
 
 function clearCitiesList() {
   renderOptions([], $citiesSelect, "Brak danych do wyświetlenia");
-}
-
-function renderCitiesList(data, $parent) {
-  renderOptions(data, $parent, "Wybierz miasto");
-}
-
-function renderVoivodeshipsList(data, $parent) {
-  renderOptions(data, $parent, "Wybierz Województwo");
 }
 
 function segregateCities(cities) {
@@ -119,28 +94,23 @@ function segregateCities(cities) {
   }, {});
 }
 
-function submitForm(e) {
-  e.preventDefault();
-  if (
-    !(
-      selectedVoivodeship?.name &&
-      selectedCity?.name &&
-      addressValue &&
-      notesValue
-    )
-  ) {
-    return;
-  }
-
-  const payload = {
-    Address: `${selectedVoivodeship.name},${selectedCity.name},${addressValue}`,
-    Notes: notesValue,
-  };
-
-  addNotes(payload);
+function renderCitiesList(data, $parent) {
+  renderOptions(
+    data,
+    $parent,
+    data.length > 0 ? "Wybierz miasto" : "Brak danych do wyświetlenia"
+  );
 }
 
-async function addNotes(payload) {
+function handleCitiesSelectChange() {
+  selectedCity = cities[selectedVoivodeship.id].find(
+    (city) => city.unique_name === this.value
+  );
+}
+
+// ============== LOGIKA ZWIĄZANA Z NOTATKAMI ==============
+
+async function addNote(payload) {
   try {
     const response = await fetch(
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/",
@@ -157,14 +127,17 @@ async function addNotes(payload) {
 
     const content = await response?.json();
     console.log(content);
+
     loadTable();
   } catch (e) {
-    return false;
+    console.error(e);
   }
 }
+// ============== /LOGIKA ZWIĄZANA Z NOTATKAMI ==============
 
+// ============== LOGIKA ZWIĄZANA Z TABLICĄ ==============
 async function loadTable() {
-  const receivedNotes = await fetchUrlGET(
+  const receivedNotes = await fetchGET(
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
   );
 
@@ -174,27 +147,33 @@ async function loadTable() {
 
 function renderTableDataCells(data, $parent) {
   const dataToHTML = data.map((record) => {
-    return `
-    <tr data-id="${record?.Id}">
-    <td>${record?.Address}</td>
-    <td>${record?.Notes}</td>
-    </tr>
-    `;
+    const $tr = document.createElement("tr");
+    $tr.dataset.id = record?.Id;
+    $tr.addEventListener("click", () => handleTableDataClick($tr.dataset.id));
+
+    const $tdAddress = document.createElement("td");
+    $tdAddress.textContent = record?.Address;
+
+    const $tdNote = document.createElement("td");
+    $tdNote.textContent = record?.Notes;
+
+    $tr.appendChild($tdAddress);
+    $tr.appendChild($tdNote);
+    return $tr;
   });
-  $parent.innerHTML = dataToHTML.join("");
-  $parent
-    .querySelectorAll("tr")
-    .forEach((tableRow) =>
-      tableRow.addEventListener("click", () =>
-        handleTableDataClick(tableRow.getAttribute("data-id"))
-      )
-    );
+
+  $parent.innerHTML = "";
+  dataToHTML.forEach((node) => {
+    $parent.appendChild(node);
+  });
 }
 
 function handleTableDataClick(id) {
   rewriteUrl(`?id=${id}`);
-  loadNote(id);
+  loadFormDataById(id);
 }
+
+// ============== /LOGIKA ZWIĄZANA Z TABLICĄ ==============
 
 function rewriteUrl(query = "") {
   history.replaceState({}, null, location.href.split("?")[0] + query);
@@ -207,48 +186,111 @@ function getParamByKey(queryKey) {
   return params[queryKey];
 }
 
-async function loadNote(id) {
-  const data = await fetchUrlGET(
-    `https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entry&entry_id=${id}`
-  );
+// ============== /LOGIKA ZWIĄZANA Z FORMULARZEM ==============
 
-  const [_, cityName, voivodeshipName] = data[0]?.Address.split(", ");
-  addressValue = data[0]?.Address.split(", ")[0];
-  notesValue = data[0]?.Notes;
-
-  if (addressValue && cityName && voivodeshipName && notesValue) {
-    const desiredVoivodeship = voivodeships.find(
-      (voivodeship) => voivodeship.name === voivodeshipName
-    );
-    selectedVoivodeship = desiredVoivodeship;
-
-    const desiredCitiy = cities[selectedVoivodeship.id]?.find(
-      (city) => city.name === cityName
-    );
-    selectedCity = desiredCitiy;
-
-    $voivodeshipsSelect.value = selectedVoivodeship.unique_name;
-    renderCitiesList(cities[selectedVoivodeship.id], $citiesSelect);
-
-    $citiesSelect.value = selectedCity.unique_name;
-
-    $streetInput.value = addressValue;
-    $notesInput.value = notesValue;
+function submitForm(e) {
+  e.preventDefault();
+  if (
+    !(
+      selectedVoivodeship?.name &&
+      selectedCity?.name &&
+      $streetInput.value &&
+      $notesInput.value
+    )
+  ) {
+    return;
   }
+
+  const payload = {
+    Address: `${selectedVoivodeship.name},${selectedCity.name},${$streetInput.value}`,
+    Notes: $notesInput.value,
+  };
+
+  addNote(payload);
+}
+
+async function loadFormDataById(id) {
+  if (!id || id === selectedNote?.Id) return;
+  const desiredNote = notes.find((note) => note.Id === id);
+  let data;
+  if (desiredNote) {
+    data = desiredNote;
+  } else {
+    try {
+      arrayOfDatas = await fetchGET(
+        `https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entry&entry_id=${id}`
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    data = arrayOfDatas[0];
+  }
+  selectedNote = data;
+
+  const { Notes: receivedNotes, Address: address } = selectedNote;
+  const [streetName, cityName, voivodeshipName] = address
+    .split(",")
+    .map((text) => text.trim());
+
+  if (!(streetName && cityName && voivodeshipName && receivedNotes)) return;
+
+  const desiredVoivodeship = voivodeships.find(
+    (voivodeship) => voivodeship.name === voivodeshipName
+  );
+  selectedVoivodeship = desiredVoivodeship;
+
+  const desiredCitiy = cities[selectedVoivodeship.id]?.find(
+    (city) => city.name === cityName
+  );
+  selectedCity = desiredCitiy;
+  $voivodeshipsSelect.value = selectedVoivodeship.unique_name;
+  renderCitiesList(cities[selectedVoivodeship.id], $citiesSelect);
+
+  $citiesSelect.value = selectedCity.unique_name;
+
+  $streetInput.value = streetName;
+  $notesInput.value = receivedNotes;
 }
 
 function fillForm() {
   const id = getParamByKey("id");
   if (id) {
-    loadNote(id);
+    loadFormDataById(id);
   }
 }
 
 function clearForm() {
   rewriteUrl();
+  renderCitiesList([], $citiesSelect);
 }
 
 function adjustTextArea(element) {
   element.style.height = "1px";
   element.style.height = 25 + element.scrollHeight + "px";
+}
+
+// ============== /LOGIKA ZWIĄZANA Z FORMULARZEM ==============
+
+function renderOptions(options, $parent, defaultOption) {
+  const optionsArrayToHTML = [
+    `<option value="" disabled selected>${
+      defaultOption || "Wybierz opcję"
+    }</option>`,
+  ];
+  options.forEach((option) => {
+    optionsArrayToHTML.push(
+      `<option value=${option.unique_name}>${option.name}</option>`
+    );
+  });
+
+  $parent.innerHTML = optionsArrayToHTML.join();
+}
+
+async function fetchGET(url) {
+  try {
+    const response = await fetch(url);
+    return await response.json();
+  } catch (e) {
+    console.error(e);
+  }
 }

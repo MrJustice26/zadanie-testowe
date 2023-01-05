@@ -126,7 +126,7 @@ table tbody tr:nth-of-type(even) {
     background-color: hsl(0, 0%, 95%);
 }
 
-table tbody tr:last-of-type {
+table {
     border-bottom: 2px solid var(--color-primary);
 }
 
