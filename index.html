@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,9 +8,40 @@
     <title>strona główna</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
-    
+    <main>
+        <div class="container">
+            <form id="form">
+                <h1 class="form__title">Notatnik inwestora</h1>
+                <label>Województwo:
+                    <select class="select" id="voivodeshipsSelect">
+                    </select>
+                </label>
+
+                <label>Miasto:
+                    <select class="select" id="citiesSelect">
+                        <option value="">Wybierz województwo</option>
+                    </select>
+                </label>
+
+                <label>Ulica:
+                    <input type="text" id="streetInput" />
+                </label>
+
+                <label>Notatki:
+                    <textarea id="notesInput"></textarea>
+                </label>
+
+                <div class="form__actions">
+                    <input type="reset" value="Reset" />
+                    <button type="submit">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </main>
 
     <script src="./index.js"></script>
 </body>
+
 </html>
