@@ -1,47 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>strona główna</title>
-    <link rel="stylesheet" href="./styles.css">
-</head>
+    <link rel="stylesheet" href="./styles.css" />
 
-<body>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
     <main>
-        <div class="container">
-            <form id="form">
-                <h1 class="form__title">Notatnik inwestora</h1>
-                <label>Województwo:
-                    <select class="select" id="voivodeshipsSelect">
-                    </select>
-                </label>
+      <div class="notes__wrapper">
+        <div class="notes__window">
+          <form id="form">
+            <h1 class="form__title">Notatnik inwestora</h1>
+            <div class="form-group">
+                
+                <label for="voivodeshipsSelect">Województwo: </label>
+                <select class="select" id="voivodeshipsSelect"></select>
+            </div>
 
-                <label>Miasto:
-                    <select class="select" id="citiesSelect">
-                        <option value="">Wybierz województwo</option>
-                    </select>
-                </label>
+            <div class="form-group">
+              <label for="citiesSelect">Miasto:</label>
+              <select class="select" id="citiesSelect">
+                <option value="">Wybierz Województwo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="streetInput">Ulica:</label>
+              <input
+                type="text"
+                id="streetInput"
+                placeholder="Podaj swoją ulicę..."
+              />
+            </div>
+            <div class="form-group">
+              <label for="notesInput">Notatki:</label>
+              <textarea
+                id="notesInput"
+                placeholder="Dodaj swoje notatki..."
+              ></textarea>
+            </div>
 
-                <label>Ulica:
-                    <input type="text" id="streetInput" />
-                </label>
+            <div class="form__actions">
+              <button type="reset" class="btn btn-danger">Reset</button>
 
-                <label>Notatki:
-                    <textarea id="notesInput"></textarea>
-                </label>
-
-                <div class="form__actions">
-                    <input type="reset" value="Reset" />
-                    <button type="submit">Zapisz</button>
-                </div>
-            </form>
+              <button type="submit" class="btn btn-success">Zapisz</button>
+            </div>
+          </form>
         </div>
+      </div>
+
     </main>
 
     <script src="./index.js"></script>
-</body>
-
+  </body>
 </html>

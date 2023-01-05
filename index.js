@@ -48,7 +48,7 @@ async function initVoivodeships() {
   renderOptions(
     receivedVoivodeships,
     $voivodeshipsSelect,
-    "Wybierz województwo"
+    "Wybierz Województwo"
   );
 
   voivodeships = receivedVoivodeships;
@@ -114,28 +114,30 @@ function submitForm(e) {
     return;
   }
 
-  addNotes({
+  const payload = {
     Address: `${selectedVoivodeship.name},${selectedCity.name},${streetValue}`,
     Notes: notesValue,
-  });
+  };
+
+  addNotes(payload);
 }
 
-async function addNotes(dataToSend) {
+async function addNotes(payload) {
   try {
     const response = await fetch(
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/",
       {
         method: "POST",
         headers: {
-          "Accept": "application/json",
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
+          Origin: "http://localhost:5500",
+          "Access-Control-Allow-Origin": "http://localhost:5500",
         },
-        body: JSON.stringify(dataToSend)
+        body: JSON.stringify(payload),
       }
     );
 
-    const content = await response.json();
+    const content = await response?.json();
     console.log(content);
   } catch (e) {
     console.error(e);
