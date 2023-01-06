@@ -1,0 +1,82 @@
+* {
+  font-family: 'Poppins', arial;
+  box-sizing: border-box;
+}
+
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+
+#form {
+  margin: 0 auto;
+}
+
+.form__title {
+  margin: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+select,
+input,
+textarea {
+  padding: 7px 15px;
+  border:1px solid gray;
+  border-radius: 5px;
+  outline: none;
+}
+
+
+
+.container {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 50px;
+  align-items: flex-start;
+  flex-direction: row;
+}
+
+.notes__window {
+  flex: 2;
+  padding: 30px 45px;
+  border-radius: 0px;
+  max-width: 600px;
+}
+
+#notesInput {
+  resize:none;
+  max-height: min(20vh, 300px);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.form__actions {
+  display: flex;
+  margin-top: 20px;
+}
+
+
+
+
+
+@media screen and (max-width: 769px) {
+
+  .notes__window {
+      padding: 0;
+      width: 100%;
+  }
+  .container {
+      padding: 35px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+  }
+}
