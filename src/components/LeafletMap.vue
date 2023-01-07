@@ -3,7 +3,7 @@
 </template>
 <script setup lang="ts">
 import L from "leaflet";
-import { onMounted } from "vue";
+import { onMounted, computed } from "vue";
 interface LeafletMapProps {
   notes: string[];
 }
@@ -11,6 +11,8 @@ interface LeafletMapProps {
 let map: L.Map | undefined;
 
 const props = defineProps<LeafletMapProps>();
+
+const getPoints = computed(() => props.notes);
 
 const setupLeafletMap = () => {
   map = L.map("map").setView([52, 20], 6);
@@ -20,7 +22,7 @@ const setupLeafletMap = () => {
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  props.notes.forEach((note) => {
+  getPoints.value.forEach((note) => {
     L.marker(generateGeoData()).addTo(map).bindPopup(note).openPopup();
   });
 };

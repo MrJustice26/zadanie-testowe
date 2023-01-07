@@ -4,7 +4,7 @@
 
     <BasePagination
       v-model="currentPage"
-      :pages-amount="pagesAmount"
+      :pages-amount="getPagesAmount"
       v-if="tableBody.length > rowsPerPageLimit"
     ></BasePagination>
   </div>
@@ -25,7 +25,11 @@ interface ITableScoreProps {
 
 const props = defineProps<ITableScoreProps>();
 
-const pagesAmount = Math.ceil(props.tableBody.length / props.rowsPerPageLimit);
+const getRowsLength = computed(() => props.tableBody.length);
+
+const getPagesAmount = computed(() =>
+  Math.ceil(getRowsLength.value / props.rowsPerPageLimit)
+);
 const currentPage = ref(1);
 
 const positionStart = computed(
