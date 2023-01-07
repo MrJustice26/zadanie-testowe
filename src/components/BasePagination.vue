@@ -42,7 +42,6 @@ const goToPage = (page: number) => {
   display: flex;
   justify-content: center;
   column-gap: 50px;
-  margin-top: 25px;
-  padding: 0 30px;
+  margin: 25px 0 40px;
 }
 </style>

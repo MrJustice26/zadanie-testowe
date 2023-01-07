@@ -14,16 +14,11 @@
 import { computed, ref } from "vue";
 import BaseTable from "./BaseTable.vue";
 import BasePagination from "./BasePagination.vue";
-
-interface ITableBodyRow {
-  id: string;
-  address: string;
-  notes: string;
-}
+import { note } from "../models/note";
 
 interface ITableScoreProps {
   tableHeading: string[];
-  tableBody: ITableBodyRow[];
+  tableBody: note[];
   rowsPerPageLimit: number;
   defaultPage?: number;
 }

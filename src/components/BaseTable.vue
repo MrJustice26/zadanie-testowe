@@ -14,14 +14,14 @@
     <tbody class="score-table-body">
       <tr
         v-for="record in tbody"
-        :key="record.id"
-        :id="record.id"
+        :key="record.Id"
+        :id="record.Id"
         class="score-table-body__row"
       >
         <td class="score-table-body__data-cell">
-          {{ record.address }}
+          {{ record.Address }}
         </td>
-        <td class="score-table-body__data-cell">{{ record.notes }}</td>
+        <td class="score-table-body__data-cell">{{ record.Notes }}</td>
       </tr>
     </tbody>
   </table>
@@ -45,6 +45,8 @@ defineProps<ITableProps>();
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
   border-bottom: 2px solid $color-primary;
   margin: 0 auto;
+  width: 100%;
+  margin-bottom: 30px;
   &-head__row {
     background-color: $color-primary;
     color: white;
