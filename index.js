@@ -5,7 +5,7 @@ const $citiesSelect = document.querySelector("#citiesSelect");
 const $addressInput = document.querySelector("#addressInput");
 const $notesTextarea = document.querySelector("#notesTextarea");
 
-// Instancje klassy VoivodeShipSelector i CitiesSelector
+// Instancje klassy VoivodeShipSelect i CitiesSelect
 let voivodeshipsController;
 let citiesController;
 
@@ -17,14 +17,14 @@ let notesController;
 window.addEventListener("load", init);
 
 function init() {
-  // Tworzymy instancje klasy VoivodeshipSelector dla województw
-  voivodeshipsController = new VoivodeshipSelector(
+  // Tworzymy instancje klasy VoivodeshipSelect dla województw
+  voivodeshipsController = new VoivodeshipSelect(
     $voivodeshipsSelect,
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
   );
 
-  // Tworzymy instancje klasy CitiesSelector dla miast
-  citiesController = new CitiesSelector(
+  // Tworzymy instancje klasy CitiesSelect dla miast
+  citiesController = new CitiesSelect(
     $citiesSelect,
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
   );
@@ -168,7 +168,7 @@ class Selector {
   }
 }
 
-class VoivodeshipSelector extends Selector {
+class VoivodeshipSelect extends Selector {
   constructor(selector, urlToFetch) {
     super(selector, urlToFetch, "Wybierz województwo");
     this.init();
@@ -183,7 +183,7 @@ class VoivodeshipSelector extends Selector {
   }
 }
 
-class CitiesSelector extends Selector {
+class CitiesSelect extends Selector {
   citiesToShow;
   constructor(selector, urlToFetch) {
     super(selector, urlToFetch, "Wybierz miasto");
@@ -313,8 +313,6 @@ async function addNotes(payload) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Origin: "http://localhost:5500",
-          "Access-Control-Allow-Origin": "http://localhost:5500",
         },
         body: JSON.stringify(payload),
       }
