@@ -54,7 +54,7 @@ textarea {
     max-width: 600px;
 }
 
-#notesInput {
+#notesTextarea {
     resize:none;
     max-height: min(20vh, 300px);
 }

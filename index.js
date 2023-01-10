@@ -1,174 +1,336 @@
+// Elementy otrzymane z DOM
 const $form = document.querySelector("#form");
-
 const $voivodeshipsSelect = document.querySelector("#voivodeshipsSelect");
 const $citiesSelect = document.querySelector("#citiesSelect");
 const $addressInput = document.querySelector("#addressInput");
-const $notesInput = document.querySelector("#notesInput");
+const $notesTextarea = document.querySelector("#notesTextarea");
 
 const $tableBody = document.querySelector("table tbody");
 
-let voivodeships = [];
-let cities = {};
-let notes = [];
+// Instancje klassy VoivodeShipSelect i CitiesSelect
+let voivodeshipsController;
+let citiesController;
 
-let selectedVoivodeship = {};
-let selectedCity = {};
-let selectedNote = {};
+// Instancje AddressInput i NotesTextarea
+let addressController;
+let notesController;
+
+// Instancja tablicy
+let tableController;
+
+const selectedNote = {};
 
 window.addEventListener("load", init);
 
-function init() {
-  initVoivodeships();
-  initCities();
-  loadTable();
-
-  fillForm();
-}
-
-$form.addEventListener("submit", submitForm);
-$form.addEventListener("reset", clearForm);
-
-$voivodeshipsSelect.addEventListener("change", handleVoivodeshipsSelectChange);
-
-$citiesSelect.addEventListener("change", handleCitiesSelectChange);
-
-$addressInput.addEventListener("input", function () {
-  $addressInput.value = this.value;
-});
-
-$notesInput.addEventListener("input", function () {
-  adjustTextArea(this);
-});
-$notesInput.addEventListener("input", function () {
-  $notesInput.value = this.value;
-});
-
-// ============== LOGIKA ZWIĄZANA Z WOJEWÓDZTWAMI ==============
-
-async function initVoivodeships() {
-  const receivedVoivodeships = await fetchGET(
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
-  );
-
-  renderVoivodeshipsList(receivedVoivodeships, $voivodeshipsSelect);
-  voivodeships = receivedVoivodeships;
-}
-
-function renderVoivodeshipsList(data, $parent) {
-  renderOptions(data, $parent, "Wybierz Województwo");
-}
-
-function handleVoivodeshipsSelectChange() {
-  selectedVoivodeship = voivodeships.find(
-    (voivodeship) => voivodeship.unique_name === this.value
-  );
-  const desiredCities = cities[selectedVoivodeship.id];
-  renderCitiesList(desiredCities, $citiesSelect);
-}
-
-// ============== LOGIKA ZWIĄZANA Z MIASTAMI ==============
-
-async function initCities() {
-  const receivedCities = await fetchGET(
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
-  );
-  const citiesSegregated = segregateCities(receivedCities);
-
-  cities = citiesSegregated;
-  clearCitiesList();
-}
-
-function clearCitiesList() {
-  renderCitiesList([], $citiesSelect);
-}
-
-function segregateCities(cities) {
-  const sortedCitiesAlphabetically = cities.sort((cityA, cityB) =>
-    cityA.name.localeCompare(cityB.name)
-  );
-  return sortedCitiesAlphabetically.reduce((acc, city) => {
-    const voivodeshipId = city.voivodeship_id;
-    if (acc[voivodeshipId]) acc[voivodeshipId].push(city);
-    else acc[voivodeshipId] = [city];
-    return acc;
-  }, {});
-}
-
-function renderCitiesList(data, $parent) {
-  renderOptions(
-    data,
-    $parent,
-    data.length > 0 ? "Wybierz miasto" : "Najpierw wybierz województwo"
-  );
-}
-
-function handleCitiesSelectChange() {
-  selectedCity = cities[selectedVoivodeship.id].find(
-    (city) => city.unique_name === this.value
-  );
-}
-
-// ============== LOGIKA ZWIĄZANA Z NOTATKAMI ==============
-
-async function addNote(payload) {
-  try {
-    const response = await fetch(
-      "https://wavy-media-proxy.wavyapps.com/investors-notebook/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    const content = await response?.json();
-
-    if (content.length) {
-      loadTable();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-// ============== /LOGIKA ZWIĄZANA Z NOTATKAMI ==============
-
-// ============== LOGIKA ZWIĄZANA Z TABLICĄ ==============
-async function loadTable() {
-  const receivedNotes = await fetchGET(
+async function init() {
+  tableController = new NotesTable(
+    $tableBody,
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
   );
 
-  if (!receivedNotes[0]?.errorCode) {
-    notes = receivedNotes;
-    renderTableDataCells(receivedNotes, $tableBody);
-  } else {
-    alert("Server error!");
+  await tableController.initTableDataCells();
+
+  // Tworzymy instancje klasy VoivodeshipSelect dla województw
+  voivodeshipsController = new VoivodeshipSelect(
+    $voivodeshipsSelect,
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
+  );
+
+  await voivodeshipsController.init();
+
+  // Tworzymy instancje klasy CitiesSelect dla miast
+  citiesController = new CitiesSelect(
+    $citiesSelect,
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
+  );
+  await citiesController.init();
+
+  // Tworzymy instancje klasy AddressInput
+  addressController = new AddressInput($addressInput);
+
+  // Tworzymy instancje klasy NotesTextarea
+  notesController = new NotesTextarea($notesTextarea);
+
+  fillForm();
+
+  // Dodanie event listenerów
+  initEventListeners();
+}
+
+function initEventListeners() {
+  voivodeshipsController.addChangeListener(function () {
+    voivodeshipsController.selectedOption = voivodeshipsController
+      .getData()
+      .find((v) => v.unique_name === this.value);
+    citiesController.renderCitiesById(voivodeshipsController.selectedOption.id);
+  });
+
+  citiesController.addChangeListener(function () {
+    const voivodeshipId = voivodeshipsController.getSelectedOption()["id"];
+    const availableCities =
+      citiesController.getAvailableCities()[voivodeshipId];
+    citiesController.selectedOption = availableCities.find(
+      (city) => city.unique_name === this.value
+    );
+  });
+
+  $addressInput.addEventListener("input", function () {
+    addressController.setValue(this.value);
+  });
+
+  $notesTextarea.addEventListener("input", function () {
+    notesController.setValue(this.value);
+    notesController.adjustTextAreaHeight(this);
+  });
+
+  $form.addEventListener("submit", submitForm);
+  $form.addEventListener("reset", resetForm);
+}
+
+class Select {
+  $selector;
+
+  changeFunction;
+  activeEventListener;
+
+  data;
+  urlToFetch;
+
+  defaultOption;
+  selectedOption;
+
+  constructor(selector, urlToFetch, defaultOption = "") {
+    this.$selector = selector;
+    this.urlToFetch = urlToFetch;
+    this.defaultOption = defaultOption;
+  }
+
+  async initOptions(urlToFetch, shouldBeRendered = true) {
+    this.data = await this.fetchOptions(urlToFetch);
+    if (shouldBeRendered) {
+      this.renderOptions(this.data);
+    }
+  }
+
+  getSelectedOption() {
+    return this.selectedOption;
+  }
+
+  getData() {
+    return this.data;
+  }
+
+  getSelector() {
+    return this.$selector;
+  }
+
+  setValue(voivodeship) {
+    if (voivodeship?.unique_name) {
+      this.selectedOption = voivodeship;
+      this.$selector.value = this.selectedOption["unique_name"];
+    } else {
+      this.$selector.value = "";
+      this.selectedOption = {};
+    }
+  }
+
+  clearSelectedOption() {
+    this.setValue("");
+  }
+
+  renderOptions(options, defaultOption = this.defaultOption) {
+    const optionsArrayToHTML = [
+      `<option value="" disabled selected>${
+        defaultOption || "Wybierz opcję"
+      }</option>`,
+    ];
+    options.forEach((option) => {
+      optionsArrayToHTML.push(
+        `<option value=${option.unique_name}>${option.name}</option>`
+      );
+    });
+
+    this.$selector.innerHTML = optionsArrayToHTML.join();
+  }
+
+  async fetchOptions(url) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  addChangeListener(callback) {
+    if (this.activeEventListener) {
+      this.$selector.removeEventListener(
+        this.activeEventListener,
+        this.changeFunction
+      );
+    }
+    this.changeFunction = callback;
+    this.activeEventListener = this.$selector.addEventListener(
+      "change",
+      callback
+    );
+  }
+
+  runChangeFunction() {
+    this.changeFunction();
+  }
+
+  destroy() {
+    this.$selector.removeEventListener(
+      this.activeEventListener,
+      this.changeFunction
+    );
   }
 }
 
-function renderTableDataCells(data, $parent) {
-  const dataToHTML = data.map((record) => {
-    const $tr = document.createElement("tr");
-    $tr.dataset.id = record?.Id;
-    $tr.addEventListener("click", () => handleTableDataClick($tr.dataset.id));
+class VoivodeshipSelect extends Select {
+  constructor(selector, urlToFetch) {
+    super(selector, urlToFetch, "Wybierz województwo");
+  }
 
-    const $tdAddress = document.createElement("td");
-    $tdAddress.textContent = record?.Address;
+  getData() {
+    return super.getData();
+  }
 
-    const $tdNote = document.createElement("td");
-    $tdNote.textContent = record?.Notes;
+  async init() {
+    await super.initOptions(this.urlToFetch);
+  }
+}
 
-    $tr.appendChild($tdAddress);
-    $tr.appendChild($tdNote);
-    return $tr;
-  });
+class CitiesSelect extends Select {
+  citiesToShow;
+  constructor(selector, urlToFetch) {
+    super(selector, urlToFetch, "Wybierz miasto");
+  }
 
-  $parent.innerHTML = "";
-  dataToHTML.forEach((node) => {
-    $parent.appendChild(node);
-  });
+  getData() {
+    return super.getData();
+  }
+
+  getAvailableCities() {
+    return this.citiesToShow;
+  }
+
+  async init() {
+    await super.initOptions(this.urlToFetch, false);
+    this.segregateCities();
+  }
+
+  segregateCities() {
+    const sortedCitiesAlphabetically = this.getData().sort((cityA, cityB) =>
+      cityA.name.localeCompare(cityB.name)
+    );
+    this.citiesToShow = sortedCitiesAlphabetically.reduce((acc, city) => {
+      const voivodeshipId = city.voivodeship_id;
+      if (acc[voivodeshipId]) acc[voivodeshipId].push(city);
+      else acc[voivodeshipId] = [city];
+      return acc;
+    }, {});
+  }
+
+  async renderCitiesById(voivodeshipId) {
+    this.renderOptions(this.citiesToShow[voivodeshipId]);
+    this.activeVoivodeshipId = voivodeshipId;
+
+    this.$selector.value = "";
+    this.selectedOption = {};
+  }
+}
+
+class BaseTextField {
+  $selector;
+  value;
+  constructor(selector) {
+    this.$selector = selector;
+    this.value = "";
+  }
+
+  setValue(value) {
+    this.$selector.value = value;
+    this.value = value;
+  }
+
+  clearValue() {
+    this.setValue("");
+  }
+
+  getValue() {
+    return this.value;
+  }
+}
+class AddressInput extends BaseTextField {
+  constructor(selector) {
+    super(selector);
+  }
+}
+
+class NotesTextarea extends BaseTextField {
+  constructor(selector) {
+    super(selector);
+  }
+
+  adjustTextAreaHeight() {
+    this.$selector.style.height = "1px";
+    this.$selector.style.height = 25 + this.$selector.scrollHeight + "px";
+  }
+}
+
+class NotesTable {
+  $selector;
+  data;
+  constructor($selector, urlToFetch) {
+    this.$selector = $selector;
+    this.urlToFetch = urlToFetch;
+  }
+
+  getData() {
+    return this.data;
+  }
+
+  async initTableDataCells() {
+    await this.fetchTableDataCells();
+    this.renderTableDataCells(this.data);
+  }
+
+  async fetchTableDataCells() {
+    try {
+      const response = await fetch(this.urlToFetch);
+      const receivedData = await response.json();
+
+      if (receivedData[0]?.errorCode) this.data = mockEntries;
+      else this.data = receivedData;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async renderTableDataCells(data) {
+    const dataToHTML = data.map((record) => {
+      const $tr = document.createElement("tr");
+      $tr.dataset.id = record?.Id;
+      $tr.addEventListener("click", () => handleTableDataClick($tr.dataset.id));
+
+      const $tdAddress = document.createElement("td");
+      $tdAddress.textContent = record?.Address;
+
+      const $tdNote = document.createElement("td");
+      $tdNote.textContent = record?.Notes;
+
+      $tr.appendChild($tdAddress);
+      $tr.appendChild($tdNote);
+      return $tr;
+    });
+
+    this.$selector.innerHTML = "";
+    dataToHTML.forEach((node) => {
+      this.$selector.appendChild(node);
+    });
+  }
 }
 
 function handleTableDataClick(id) {
@@ -176,91 +338,73 @@ function handleTableDataClick(id) {
   loadFormDataById(id);
 }
 
-// ============== /LOGIKA ZWIĄZANA Z TABLICĄ ==============
+// ============== LOGIKA ZWIĄZANA Z FORMULARZEM ==============
 
-function rewriteUrl(query = "") {
-  history.replaceState({}, null, location.href.split("?")[0] + query);
+async function loadFormDataById(id) {
+  if (!id || id === selectedNote?.Id) return;
+  const desiredNote = tableController.getData().find((note) => note.Id === id);
+  if (desiredNote) {
+    const [receivedVoivodeshipName, receivedCityName, receivedAddress] =
+      desiredNote.Address.split(", ");
+    const receivedNotes = desiredNote.Notes;
+
+    const desiredVoivodeship = voivodeshipsController
+      .getData()
+      .find((voivodeship) => voivodeship.name === receivedVoivodeshipName);
+    const desiredVoivodeshipId = desiredVoivodeship["id"];
+    voivodeshipsController.setValue(desiredVoivodeship);
+
+    const desiredCity = citiesController
+      .getAvailableCities()
+      [desiredVoivodeshipId].find((city) => city.name === receivedCityName);
+    citiesController.renderCitiesById(desiredVoivodeshipId);
+    citiesController.setValue(desiredCity);
+
+    addressController.setValue(receivedAddress);
+    notesController.setValue(receivedNotes);
+  }
 }
 
-function getParamByKey(queryKey) {
-  const params = new Proxy(new URLSearchParams(window.location.search), {
-    get: (searchParams, prop) => searchParams.get(prop),
-  });
-  return params[queryKey];
-}
+function resetForm(e) {
+  e.preventDefault();
+  voivodeshipsController.clearSelectedOption();
+  citiesController.clearSelectedOption();
+  addressController.clearValue();
+  notesController.clearValue();
 
-// ============== /LOGIKA ZWIĄZANA Z FORMULARZEM ==============
+  rewriteUrl();
+}
 
 function submitForm(e) {
   e.preventDefault();
-  const validateResult = validateForm(
-    selectedVoivodeship?.name,
-    selectedCity?.name,
-    $addressInput.value,
-    $notesInput.value
+
+  const voivodeshipName = voivodeshipsController.getSelectedOption()?.name;
+  const cityName = citiesController.getSelectedOption()?.name;
+  const addressValue = addressController.getValue();
+  const notesValue = notesController.getValue();
+
+  const errors = validateForm(
+    voivodeshipName,
+    cityName,
+    addressValue,
+    notesValue
   );
-  const errorKeys = Object.keys(validateResult);
-  let errorsToRender = "";
-  if (errorKeys.length) {
-    errorKeys.forEach((error) => {
-      errorsToRender += `${validateResult[error]} \n`;
-    });
-    alert(errorsToRender);
+
+  const errorValues = Object.keys(errors).map((errorKey) => errors[errorKey]);
+
+  if (errorValues.length) {
+    alert(errorValues.join("\n"));
     return;
   }
 
   const payload = {
-    Address: `${selectedVoivodeship.name},${selectedCity.name},${$addressInput.value}`,
-    Notes: $notesInput.value,
+    Address: `${voivodeshipName},${cityName},${addressValue}`,
+    Notes: notesValue,
   };
 
-  clearForm();
+  console.log(payload);
+
   addNote(payload);
-}
-
-async function loadFormDataById(id) {
-  if (!id || id === selectedNote?.Id) return;
-  const desiredNote = notes.find((note) => note.Id === id);
-  let data;
-  if (desiredNote) {
-    data = desiredNote;
-  } else {
-    try {
-      arrayOfDatas = await fetchGET(
-        `https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entry&entry_id=${id}`
-      );
-    } catch (e) {
-      console.error(e);
-    }
-    data = arrayOfDatas[0];
-  }
-  selectedNote = data;
-
-  const { Notes: receivedNotes, Address: address } = selectedNote;
-  const [streetName, cityName, voivodeshipName] = address
-    .split(",")
-    .map((text) => text.trim());
-
-  if (!(streetName && cityName && voivodeshipName && receivedNotes)) return;
-
-  const desiredVoivodeship = voivodeships.find(
-    (voivodeship) => voivodeship.name === voivodeshipName
-  );
-  selectedVoivodeship = desiredVoivodeship;
-
-  const desiredCitiy = cities[selectedVoivodeship?.id]?.find(
-    (city) => city.name === cityName
-  );
-  if (desiredCitiy) {
-    selectedCity = desiredCitiy;
-    $voivodeshipsSelect.value = selectedVoivodeship.unique_name;
-    renderCitiesList(cities[selectedVoivodeship.id], $citiesSelect);
-
-    $citiesSelect.value = selectedCity.unique_name;
-
-    $addressInput.value = streetName;
-    $notesInput.value = receivedNotes;
-  }
 }
 
 function validateForm(voivodeshipValue, cityValue, addressValue, notesValue) {
@@ -288,39 +432,59 @@ function fillForm() {
   }
 }
 
-function clearForm() {
-  rewriteUrl();
-  renderCitiesList([], $citiesSelect);
-}
-
-// WYSOKOŚĆ TEXTAREA
-function adjustTextArea(element) {
-  element.style.height = "1px";
-  element.style.height = 25 + element.scrollHeight + "px";
-}
-
 // ============== /LOGIKA ZWIĄZANA Z FORMULARZEM ==============
 
-function renderOptions(options, $parent, defaultOption) {
-  const optionsArrayToHTML = [
-    `<option value="" disabled selected>${
-      defaultOption || "Wybierz opcję"
-    }</option>`,
-  ];
-  options.forEach((option) => {
-    optionsArrayToHTML.push(
-      `<option value=${option.unique_name}>${option.name}</option>`
-    );
-  });
+// ============== UTILS
 
-  $parent.innerHTML = optionsArrayToHTML.join();
+function rewriteUrl(query = "") {
+  history.replaceState({}, null, location.href.split("?")[0] + query);
 }
 
-async function fetchGET(url) {
+function getParamByKey(queryKey) {
+  const params = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop),
+  });
+  return params[queryKey];
+}
+
+async function addNote(payload) {
   try {
-    const response = await fetch(url);
-    return await response.json();
+    const response = await fetch(
+      "https://wavy-media-proxy.wavyapps.com/investors-notebook/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const content = await response?.json();
+
+    if (content.length) {
+      tableController.initTableDataCells();
+    }
   } catch (e) {
     console.error(e);
   }
 }
+
+// Dane, w przypadku gdy serwer nie zadziała.
+var mockEntries = [
+  {
+    Id: "1",
+    Notes: "Witaj swit! 1",
+    Address: "mazowieckie, Warszawa, pl. Defilad 1",
+  },
+  {
+    Id: "2",
+    Notes: "Następna stacja...",
+    Address: "mazowieckie, Warszawa, pole Mokotowskie",
+  },
+  {
+    Id: "3",
+    Notes: "Poznań - miasto doznań",
+    Address: "wielkopolskie, Poznań, pl. Defilad 3",
+  },
+];
