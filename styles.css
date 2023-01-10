@@ -85,3 +85,10 @@ textarea {
     background-color: hsl(90, 40%, 20%);
 
 }
+
+@media screen and (max-width: 480px){
+    .notes__window {
+        box-shadow: none;
+        padding: 0 30px;
+    }
+}
