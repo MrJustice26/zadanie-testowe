@@ -5,6 +5,7 @@
         v-if="areNotes"
         @check-data-validity="fetchRecentNotes"
         :notes="notes"
+        :force-delay="forceDelay"
       />
       <TableScore
         v-if="areNotes"
@@ -13,7 +14,7 @@
         :rows-per-page-limit="rowsPerPageLimit"
         :default-page="defaultPage"
       />
-      <LeafletMap v-if="areLeafletNotes" :notes="leafletNotes" />
+      <LeafletMap v-if="areILeafletNotes" :notes="leafletNotes" />
     </div>
   </main>
 </template>
@@ -23,32 +24,28 @@ import TableScore from "./components/TableScore.vue";
 import LeafletMap from "./components/LeafletMap.vue";
 import NotesChecker from "./components/NotesChecker.vue";
 import { onMounted, ref, watch, computed } from "vue";
-import { note } from "./models/note";
+import { INote, ILeafletNote } from "./models/note";
 
+// NOTESCHECKER ADDITIONAL DATA
+const forceDelay = 10;
+
+// TABLESCORE DATA
 const tableHeading = ["Address", "Zawartość notatek"];
 const rowsPerPageLimit = 10;
 const defaultPage = 1;
-
-const notes = ref<[] | note[]>([]);
-const leafletNotes = ref<[] | string[]>([]);
-
+const notes = ref<[] | INote[]>([]);
 const areNotes = computed(() => notes.value.length);
-const areLeafletNotes = computed(() => leafletNotes.value.length);
+
+// LEAFLETMAP DATA
+const leafletNotes = ref<[] | ILeafletNote[]>([]);
+const areILeafletNotes = computed(() => leafletNotes.value.length);
 
 const fetchRecentNotes = async () => {
   try {
     const response = await fetch(
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
     );
-
-    notes.value = [
-      {
-        Id: `${new Date().toISOString()}`,
-        Address: "Szpitalna 26, Poznań, wielkopolskie",
-        Notes: "Poznań miasto doznań",
-      },
-      ...notes.value,
-    ];
+    notes.value = await response.json();
   } catch (e) {
     console.error(e);
   }
@@ -56,7 +53,9 @@ const fetchRecentNotes = async () => {
 
 watch(notes, (newNode) => {
   if (newNode) {
-    leafletNotes.value = notes.value.map((note) => note.Notes);
+    leafletNotes.value = notes.value.map((note) => ({
+      Notes: note.Notes,
+    }));
   }
 });
 

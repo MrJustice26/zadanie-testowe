@@ -28,11 +28,11 @@
 </template>
 
 <script setup lang="ts">
-import { note } from "../models/note";
+import { INote } from "../models/note";
 
 interface ITableProps {
   thead: string[];
-  tbody: note[];
+  tbody: INote[];
 }
 
 defineProps<ITableProps>();
@@ -66,6 +66,12 @@ defineProps<ITableProps>();
         background-color: hsl(0, 0%, 95%);
       }
     }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .score-table {
+    box-shadow: none;
   }
 }
 </style>

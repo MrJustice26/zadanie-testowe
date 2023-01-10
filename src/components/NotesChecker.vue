@@ -28,12 +28,13 @@
 
 <script setup lang="ts">
 import { ref, Ref, onMounted, onUnmounted, computed, watch } from "vue";
-import { note } from "../models/note";
+import { INote } from "../models/note";
 import BaseButton from "./BaseButton.vue";
 
 interface NotesCheckerProps {
-  notes: note[];
+  notes: INote[];
   delay?: number;
+  forceDelay?: number;
 }
 
 interface IFetchChecker {
@@ -42,7 +43,7 @@ interface IFetchChecker {
 }
 
 const props = defineProps<NotesCheckerProps>();
-const savedNotes: note[] | [] = props.notes;
+const savedNotes: INote[] | [] = props.notes;
 const noteDiffCounter = ref(0);
 
 const getParentNotes = computed(() => props.notes);
@@ -50,7 +51,10 @@ const getParentNotes = computed(() => props.notes);
 const emit = defineEmits(["checkDataValidity"]);
 const timerValue: Ref<number | null> = ref(null);
 
-const canForceCheck = computed(() => timerValue.value && timerValue.value > 50);
+const canForceCheck = computed(() => {
+  const minTime = (props.delay || 60) - (props.forceDelay || 5);
+  return timerValue.value && timerValue.value > minTime;
+});
 
 enum DataValidity {
   ACTUAL = "Aktualne",
@@ -156,6 +160,13 @@ onUnmounted(() => {
 
   &.red {
     background-color: $color-primary;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .notes-checker {
+    box-shadow: none;
+    border-radius: 0;
   }
 }
 </style>
