@@ -2,7 +2,7 @@ const $form = document.querySelector("#form");
 
 const $voivodeshipsSelect = document.querySelector("#voivodeshipsSelect");
 const $citiesSelect = document.querySelector("#citiesSelect");
-const $streetInput = document.querySelector("#streetInput");
+const $addressInput = document.querySelector("#addressInput");
 const $notesInput = document.querySelector("#notesInput");
 
 const $tableBody = document.querySelector("table tbody");
@@ -32,8 +32,8 @@ $voivodeshipsSelect.addEventListener("change", handleVoivodeshipsSelectChange);
 
 $citiesSelect.addEventListener("change", handleCitiesSelectChange);
 
-$streetInput.addEventListener("input", function () {
-  $streetInput.value = this.value;
+$addressInput.addEventListener("input", function () {
+  $addressInput.value = this.value;
 });
 
 $notesInput.addEventListener("input", function () {
@@ -79,7 +79,7 @@ async function initCities() {
 }
 
 function clearCitiesList() {
-  renderOptions([], $citiesSelect, "Brak danych do wyświetlenia");
+  renderCitiesList([], $citiesSelect);
 }
 
 function segregateCities(cities) {
@@ -98,7 +98,7 @@ function renderCitiesList(data, $parent) {
   renderOptions(
     data,
     $parent,
-    data.length > 0 ? "Wybierz miasto" : "Brak danych do wyświetlenia"
+    data.length > 0 ? "Wybierz miasto" : "Najpierw wybierz województwo"
   );
 }
 
@@ -118,17 +118,16 @@ async function addNote(payload) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Origin: "http://localhost:5500",
-          "Access-Control-Allow-Origin": "http://localhost:5500",
         },
         body: JSON.stringify(payload),
       }
     );
 
     const content = await response?.json();
-    console.log(content);
 
-    loadTable();
+    if (content.length) {
+      loadTable();
+    }
   } catch (e) {
     console.error(e);
   }
@@ -141,8 +140,12 @@ async function loadTable() {
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
   );
 
-  notes = receivedNotes;
-  renderTableDataCells(receivedNotes, $tableBody);
+  if (!receivedNotes[0]?.errorCode) {
+    notes = receivedNotes;
+    renderTableDataCells(receivedNotes, $tableBody);
+  } else {
+    alert("Server error!");
+  }
 }
 
 function renderTableDataCells(data, $parent) {
@@ -190,22 +193,28 @@ function getParamByKey(queryKey) {
 
 function submitForm(e) {
   e.preventDefault();
-  if (
-    !(
-      selectedVoivodeship?.name &&
-      selectedCity?.name &&
-      $streetInput.value &&
-      $notesInput.value
-    )
-  ) {
+  const validateResult = validateForm(
+    selectedVoivodeship?.name,
+    selectedCity?.name,
+    $addressInput.value,
+    $notesInput.value
+  );
+  const errorKeys = Object.keys(validateResult);
+  let errorsToRender = "";
+  if (errorKeys.length) {
+    errorKeys.forEach((error) => {
+      errorsToRender += `${validateResult[error]} \n`;
+    });
+    alert(errorsToRender);
     return;
   }
 
   const payload = {
-    Address: `${selectedVoivodeship.name},${selectedCity.name},${$streetInput.value}`,
+    Address: `${selectedVoivodeship.name},${selectedCity.name},${$addressInput.value}`,
     Notes: $notesInput.value,
   };
 
+  clearForm();
   addNote(payload);
 }
 
@@ -239,17 +248,37 @@ async function loadFormDataById(id) {
   );
   selectedVoivodeship = desiredVoivodeship;
 
-  const desiredCitiy = cities[selectedVoivodeship.id]?.find(
+  const desiredCitiy = cities[selectedVoivodeship?.id]?.find(
     (city) => city.name === cityName
   );
-  selectedCity = desiredCitiy;
-  $voivodeshipsSelect.value = selectedVoivodeship.unique_name;
-  renderCitiesList(cities[selectedVoivodeship.id], $citiesSelect);
+  if (desiredCitiy) {
+    selectedCity = desiredCitiy;
+    $voivodeshipsSelect.value = selectedVoivodeship.unique_name;
+    renderCitiesList(cities[selectedVoivodeship.id], $citiesSelect);
 
-  $citiesSelect.value = selectedCity.unique_name;
+    $citiesSelect.value = selectedCity.unique_name;
 
-  $streetInput.value = streetName;
-  $notesInput.value = receivedNotes;
+    $addressInput.value = streetName;
+    $notesInput.value = receivedNotes;
+  }
+}
+
+function validateForm(voivodeshipValue, cityValue, addressValue, notesValue) {
+  const errors = {};
+  if (!voivodeshipValue || voivodeshipValue.trim() === "") {
+    errors.voivodeship = "Musisz zaznaczyć jedną opcje z województw!";
+  }
+  if (!cityValue || cityValue.trim() === "") {
+    errors.cityValue = "Musisz zaznaczyć jedną opcje z miast!";
+  }
+  if (addressValue.trim() === "") {
+    errors.addressValue = "Pole address nie może być puste!";
+  }
+  if (notesValue.trim() === "") {
+    errors.notesValue = "Pole notatki nie może być puste!";
+  }
+
+  return errors;
 }
 
 function fillForm() {
@@ -264,6 +293,7 @@ function clearForm() {
   renderCitiesList([], $citiesSelect);
 }
 
+// WYSOKOŚĆ TEXTAREA
 function adjustTextArea(element) {
   element.style.height = "1px";
   element.style.height = 25 + element.scrollHeight + "px";
