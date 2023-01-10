@@ -1,1 +1,3 @@
-# zadanie-testowe
+# Etap 1
+
+## W tym etapie nie używałem jakichkolwiek bibliotek, frameworków, bundlerów etc...
