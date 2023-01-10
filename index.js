@@ -1,125 +1,308 @@
+// Elementy otrzymane z DOM
 const $form = document.querySelector("#form");
 const $voivodeshipsSelect = document.querySelector("#voivodeshipsSelect");
 const $citiesSelect = document.querySelector("#citiesSelect");
-const $streetInput = document.querySelector("#streetInput");
-const $notesInput = document.querySelector("#notesInput");
+const $addressInput = document.querySelector("#addressInput");
+const $notesTextarea = document.querySelector("#notesTextarea");
 
-let voivodeships = [];
-let cities = {};
+// Instancje klassy VoivodeShipSelector i CitiesSelector
+let voivodeshipsController;
+let citiesController;
 
-let selectedVoivodeship = {};
-let selectedCity = {};
-let streetValue = "";
-let notesValue = "";
+// Instancje AddressInput i NotesTextarea
+let addressController;
+let notesController;
 
+// Inicjalizacja aplikacji
 window.addEventListener("load", init);
-$form.addEventListener("submit", submitForm);
 
 function init() {
-  initVoivodeships();
-  initCities();
-}
-
-$voivodeshipsSelect.addEventListener("change", function () {
-  selectedVoivodeship = voivodeships.find(
-    (voivodeship) => voivodeship.unique_name === this.value
-  );
-  const desiredCities = cities[selectedVoivodeship.id];
-  renderOptions(desiredCities, $citiesSelect, "Wybierz miasto");
-});
-
-$citiesSelect.addEventListener("change", function () {
-  selectedCity = cities[selectedVoivodeship.id].find(
-    (city) => city.unique_name === this.value
-  );
-});
-
-$streetInput.addEventListener("input", function () {
-  streetValue = this.value;
-});
-
-$notesInput.addEventListener("input", function () {
-  notesValue = this.value;
-});
-
-// Ładowanie oraz dodanie do selektora województw
-async function initVoivodeships() {
-  const receivedVoivodeships = await getVoivodeships();
-  renderOptions(
-    receivedVoivodeships,
+  // Tworzymy instancje klasy VoivodeshipSelector dla województw
+  voivodeshipsController = new VoivodeshipSelector(
     $voivodeshipsSelect,
-    "Wybierz Województwo"
-  );
-
-  voivodeships = receivedVoivodeships;
-}
-async function getVoivodeships() {
-  const response = await fetch(
     "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
   );
-  return await response.json();
+
+  // Tworzymy instancje klasy CitiesSelector dla miast
+  citiesController = new CitiesSelector(
+    $citiesSelect,
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
+  );
+
+  // Tworzymy instancje klasy AddressInput
+  addressController = new AddressInput($addressInput);
+
+  // Tworzymy instancje klasy NotesTextarea
+  notesController = new NotesTextarea($notesTextarea);
+
+  // Dodanie event listenerów
+  initEventListeners();
 }
 
-function renderOptions(options, $parent, defaultOption) {
-  const optionsArrayToHTML = [
-    `<option value="" disabled selected>${
-      defaultOption || "Wybierz opcję"
-    }</option>`,
-  ];
-  options.forEach((option) => {
-    optionsArrayToHTML.push(
-      `<option value=${option.unique_name}>${option.name}</option>`
+function initEventListeners() {
+  voivodeshipsController.addChangeListener(function () {
+    voivodeshipsController.selectedOption = voivodeshipsController
+      .getData()
+      .find((v) => v.unique_name === this.value);
+    citiesController.renderCitiesById(voivodeshipsController.selectedOption.id);
+  });
+
+  citiesController.addChangeListener(function () {
+    const voivodeshipId = voivodeshipsController.getSelectedOption()["id"];
+    const availableCities =
+      citiesController.getAvailableCities()[voivodeshipId];
+    citiesController.selectedOption = availableCities.find(
+      (city) => city.unique_name === this.value
     );
   });
 
-  $parent.innerHTML = optionsArrayToHTML.join();
+  $addressInput.addEventListener("input", function () {
+    addressController.setValue(this.value);
+  });
+
+  $notesTextarea.addEventListener("input", function () {
+    notesController.setValue(this.value);
+  });
+
+  $form.addEventListener("submit", submitForm);
+  $form.addEventListener("reset", resetForm);
 }
 
-async function initCities() {
-  const receivedCities = await getCities();
-  const citiesSegregated = segregateCities(receivedCities);
+class Selector {
+  $selector;
 
-  cities = citiesSegregated;
+  changeFunction;
+  activeEventListener;
+
+  data;
+  urlToFetch;
+
+  defaultOption;
+  selectedOption;
+
+  constructor(selector, urlToFetch, defaultOption = "") {
+    this.$selector = selector;
+    this.urlToFetch = urlToFetch;
+    this.defaultOption = defaultOption;
+  }
+
+  async initOptions(urlToFetch, shouldBeRendered = true) {
+    this.data = await this.fetchOptions(urlToFetch);
+    if (shouldBeRendered) {
+      this.renderOptions(this.data);
+    }
+  }
+
+  getSelectedOption() {
+    return this.selectedOption;
+  }
+
+  getData() {
+    return this.data;
+  }
+
+  getSelector() {
+    return this.$selector;
+  }
+
+  setSelectorValue(value) {
+    this.$selector.value = value;
+  }
+
+  setSelectedOption(value) {
+    this.selectedOption = value;
+  }
+
+  clearSelectedOption() {
+    this.setSelectedOption({});
+    this.setSelectorValue("");
+  }
+
+  renderOptions(options, defaultOption = this.defaultOption) {
+    const optionsArrayToHTML = [
+      `<option value="" disabled selected>${
+        defaultOption || "Wybierz opcję"
+      }</option>`,
+    ];
+    options.forEach((option) => {
+      optionsArrayToHTML.push(
+        `<option value=${option.unique_name}>${option.name}</option>`
+      );
+    });
+
+    this.$selector.innerHTML = optionsArrayToHTML.join();
+  }
+
+  async fetchOptions(url) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  addChangeListener(callback) {
+    if (this.activeEventListener) {
+      this.$selector.removeEventListener(
+        this.activeEventListener,
+        this.changeFunction
+      );
+    }
+    this.changeFunction = callback;
+    this.activeEventListener = this.$selector.addEventListener(
+      "change",
+      callback
+    );
+  }
+
+  runChangeFunction() {
+    this.changeFunction();
+  }
+
+  destroy() {
+    this.$selector.removeEventListener(
+      this.activeEventListener,
+      this.changeFunction
+    );
+  }
 }
 
-async function getCities() {
-  const response = await fetch(
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
-  );
-  return await response.json();
+class VoivodeshipSelector extends Selector {
+  constructor(selector, urlToFetch) {
+    super(selector, urlToFetch, "Wybierz województwo");
+    this.init();
+  }
+
+  getData() {
+    return super.getData();
+  }
+
+  async init() {
+    await super.initOptions(this.urlToFetch);
+  }
 }
 
-function segregateCities(cities) {
-  const sortedCitiesAlphabetically = cities.sort((cityA, cityB) =>
-    cityA.name.localeCompare(cityB.name)
-  );
-  return sortedCitiesAlphabetically.reduce((acc, city) => {
-    const voivodeshipId = city.voivodeship_id;
-    if (acc[voivodeshipId]) acc[voivodeshipId].push(city);
-    else acc[voivodeshipId] = [city];
-    return acc;
-  }, {});
+class CitiesSelector extends Selector {
+  citiesToShow;
+  constructor(selector, urlToFetch) {
+    super(selector, urlToFetch, "Wybierz miasto");
+    this.init();
+  }
+
+  getData() {
+    return super.getData();
+  }
+
+  getAvailableCities() {
+    return this.citiesToShow;
+  }
+
+  async init() {
+    await super.initOptions(this.urlToFetch, false);
+    this.segregateCities();
+  }
+
+  segregateCities() {
+    const sortedCitiesAlphabetically = this.getData().sort((cityA, cityB) =>
+      cityA.name.localeCompare(cityB.name)
+    );
+    this.citiesToShow = sortedCitiesAlphabetically.reduce((acc, city) => {
+      const voivodeshipId = city.voivodeship_id;
+      if (acc[voivodeshipId]) acc[voivodeshipId].push(city);
+      else acc[voivodeshipId] = [city];
+      return acc;
+    }, {});
+  }
+
+  async renderCitiesById(voivodeshipId) {
+    this.renderOptions(this.citiesToShow[voivodeshipId]);
+    this.activeVoivodeshipId = voivodeshipId;
+
+    this.$selector.value = "";
+    this.selectedOption = {};
+  }
+}
+
+class BaseTextField {
+  $selector;
+  value;
+  constructor(selector) {
+    this.$selector = selector;
+    this.value = "";
+  }
+
+  setValue(value) {
+    this.$selector.value = value;
+    this.value = value;
+  }
+
+  clearValue() {
+    this.setValue("");
+  }
+
+  getValue() {
+    return this.value;
+  }
+}
+class AddressInput extends BaseTextField {
+  constructor(selector) {
+    super(selector);
+  }
+}
+
+class NotesTextarea extends BaseTextField {
+  constructor(selector) {
+    super(selector);
+  }
 }
 
 function submitForm(e) {
   e.preventDefault();
-  if (
-    !(
-      selectedVoivodeship?.name &&
-      selectedCity?.name &&
-      streetValue &&
-      notesValue
-    )
-  ) {
+
+  const voivodeshipName = voivodeshipsController.getSelectedOption()?.name;
+  const cityName = citiesController.getSelectedOption()?.name;
+  const addressValue = addressController.getValue();
+  const notesValue = notesController.getValue();
+
+  const errors = validateForm(
+    voivodeshipName,
+    cityName,
+    addressValue,
+    notesValue
+  );
+
+  const errorValues = Object.keys(errors).map((errorKey) => errors[errorKey]);
+
+  if (errorValues.length) {
+    alert(errorValues.join("\n"));
     return;
   }
 
   const payload = {
-    Address: `${selectedVoivodeship.name},${selectedCity.name},${streetValue}`,
+    Address: `${voivodeshipName},${cityName},${addressValue}`,
     Notes: notesValue,
   };
 
   addNotes(payload);
+}
+
+function validateForm(voivodeshipValue, cityValue, addressValue, notesValue) {
+  const errors = {};
+  if (!voivodeshipValue || voivodeshipValue.trim() === "") {
+    errors.voivodeship = "Musisz zaznaczyć jedną opcje z województw!";
+  }
+  if (!cityValue || cityValue.trim() === "") {
+    errors.cityValue = "Musisz zaznaczyć jedną opcje z miast!";
+  }
+  if (addressValue.trim() === "") {
+    errors.addressValue = "Pole address nie może być puste!";
+  }
+  if (notesValue.trim() === "") {
+    errors.notesValue = "Pole notatki nie może być puste!";
+  }
+
+  return errors;
 }
 
 async function addNotes(payload) {
@@ -142,4 +325,12 @@ async function addNotes(payload) {
   } catch (e) {
     console.error(e);
   }
+}
+
+function resetForm(e) {
+  e.preventDefault();
+  voivodeshipsController.clearSelectedOption();
+  citiesController.clearSelectedOption();
+  addressController.clearValue();
+  notesController.clearValue();
 }
