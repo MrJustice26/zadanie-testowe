@@ -105,17 +105,18 @@ class Selector {
     return this.$selector;
   }
 
-  setSelectorValue(value) {
-    this.$selector.value = value;
-  }
-
-  setSelectedOption(value) {
-    this.selectedOption = value;
+  setValue(voivodeship) {
+    if (voivodeship?.unique_name) {
+      this.selectedOption = voivodeship;
+      this.$selector.value = this.selectedOption["unique_name"];
+    } else {
+      this.$selector.value = "";
+      this.selectedOption = {};
+    }
   }
 
   clearSelectedOption() {
-    this.setSelectedOption({});
-    this.setSelectorValue("");
+    this.setValue({});
   }
 
   renderOptions(options, defaultOption = this.defaultOption) {
