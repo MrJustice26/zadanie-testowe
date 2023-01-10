@@ -25,6 +25,7 @@ import LeafletMap from "./components/LeafletMap.vue";
 import NotesChecker from "./components/NotesChecker.vue";
 import { onMounted, ref, watch, computed } from "vue";
 import { INote, ILeafletNote } from "./models/note";
+import mockEntries from "./mocks/mockEntries";
 
 // NOTESCHECKER ADDITIONAL DATA
 const forceDelay = 10;
@@ -45,7 +46,14 @@ const fetchRecentNotes = async () => {
     const response = await fetch(
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
     );
-    notes.value = await response.json();
+    const receivedData = await response.json();
+
+    // W Przypadku gdy serwer nie zadziała.
+    if (receivedData[0]?.errorCode) {
+      notes.value = mockEntries;
+    } else {
+      notes.value = receivedData;
+    }
   } catch (e) {
     console.error(e);
   }
