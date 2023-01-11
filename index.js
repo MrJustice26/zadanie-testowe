@@ -320,8 +320,8 @@ async function addNotes(payload) {
       }
     );
 
-    const content = await response;
-    console.log(content);
+    console.log(response);
+    clearForm();
   } catch (e) {
     console.error(e);
   }
@@ -329,6 +329,10 @@ async function addNotes(payload) {
 
 function resetForm(e) {
   e.preventDefault();
+  clearForm();
+}
+
+function clearForm() {
   voivodeshipsController.clearSelectedOption();
   citiesController.clearSelectedOption();
   addressController.clearValue();
