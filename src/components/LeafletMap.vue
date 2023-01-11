@@ -5,17 +5,16 @@
 import L from "leaflet";
 import { onMounted, onUnmounted, computed, ref, Ref, watch } from "vue";
 import { ILeafletNote } from "../models/note";
+import { generateGeoData } from "../utils/getGeoData";
 
 interface LeafletMapProps {
   notes: ILeafletNote[];
-  pointsLimit?: number;
 }
 
 let map: L.Map | undefined;
 
 const props = defineProps<LeafletMapProps>();
 
-const getPointsLimit = computed(() => props.pointsLimit);
 const getNotes = computed(() => props.notes);
 
 const leafletData: Ref<L.Marker<any>[]> = ref([]);
@@ -62,13 +61,6 @@ const deleteLeafletMap = () => {
 const reloadPoints = () => {
   deletePoints();
   loadPoints();
-};
-
-// Ponieważ https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries zwraca bez lat i lng
-const generateGeoData = (): [number, number] => {
-  const lat = Math.random() * 4 + 50;
-  const lng = Math.random() * 6 + 15;
-  return [lat, lng];
 };
 
 onMounted(() => {
