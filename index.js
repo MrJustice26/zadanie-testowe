@@ -20,13 +20,13 @@ function init() {
   // Tworzymy instancje klasy VoivodeshipSelect dla województw
   voivodeshipsController = new VoivodeshipSelect(
     $voivodeshipsSelect,
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/wojewodztwa.json"
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/inst6/data/wojewodztwa.json"
   );
 
   // Tworzymy instancje klasy CitiesSelect dla miast
   citiesController = new CitiesSelect(
     $citiesSelect,
-    "https://wavy-media-proxy.wavyapps.com/investors-notebook/data/miasta.json"
+    "https://wavy-media-proxy.wavyapps.com/investors-notebook/inst6/data/miasta.json"
   );
 
   // Tworzymy instancje klasy AddressInput
@@ -309,7 +309,7 @@ function validateForm(voivodeshipValue, cityValue, addressValue, notesValue) {
 async function addNotes(payload) {
   try {
     const response = await fetch(
-      "https://wavy-media-proxy.wavyapps.com/investors-notebook/",
+      "https://wavy-media-proxy.wavyapps.com/investors-notebook/inst6/",
       {
         method: "POST",
         headers: {
