@@ -99,7 +99,7 @@ class Select {
   defaultOption;
   selectedOption;
 
-  constructor(selector, urlToFetch, defaultOption = "") {
+  constructor(selector, urlToFetch, defaultOption = "Wybierz opcję") {
     this.$selector = selector;
     this.urlToFetch = urlToFetch;
     this.defaultOption = defaultOption;
@@ -139,20 +139,14 @@ class Select {
   }
 
   renderOptions(options, defaultOption = this.defaultOption) {
-    const optionsArrayToHTML = [];
+    const optionsArrayToHTML = [
+      `<option value="" disabled selected>${defaultOption}</option>`,
+    ];
     options.forEach((option) => {
       optionsArrayToHTML.push(
         `<option value=${option.unique_name}>${option.name}</option>`
       );
     });
-
-    const defaultoptionText =
-      optionsArrayToHTML.length > 0
-        ? defaultOption
-        : "Brak danych do wyświetlenia";
-    const defaultOptionHTML = `<option value="" disabled selected>${defaultoptionText}</option>`;
-
-    optionsArrayToHTML.unshift(defaultOptionHTML);
 
     this.$selector.innerHTML = optionsArrayToHTML.join();
   }
