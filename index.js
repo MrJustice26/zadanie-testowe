@@ -80,7 +80,7 @@ class Selector {
   defaultOption;
   selectedOption;
 
-  constructor(selector, urlToFetch, defaultOption = "") {
+  constructor(selector, urlToFetch, defaultOption = "Wybierz opcję") {
     this.$selector = selector;
     this.urlToFetch = urlToFetch;
     this.defaultOption = defaultOption;
@@ -121,9 +121,7 @@ class Selector {
 
   renderOptions(options, defaultOption = this.defaultOption) {
     const optionsArrayToHTML = [
-      `<option value="" disabled selected>${
-        defaultOption || "Wybierz opcję"
-      }</option>`,
+      `<option value="" disabled selected>${defaultOption}</option>`,
     ];
     options.forEach((option) => {
       optionsArrayToHTML.push(
