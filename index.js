@@ -139,16 +139,20 @@ class Select {
   }
 
   renderOptions(options, defaultOption = this.defaultOption) {
-    const optionsArrayToHTML = [
-      `<option value="" disabled selected>${
-        defaultOption || "Wybierz opcję"
-      }</option>`,
-    ];
+    const optionsArrayToHTML = [];
     options.forEach((option) => {
       optionsArrayToHTML.push(
         `<option value=${option.unique_name}>${option.name}</option>`
       );
     });
+
+    const defaultoptionText =
+      optionsArrayToHTML.length > 0
+        ? defaultOption
+        : "Brak danych do wyświetlenia";
+    const defaultOptionHTML = `<option value="" disabled selected>${defaultoptionText}</option>`;
+
+    optionsArrayToHTML.unshift(defaultOptionHTML);
 
     this.$selector.innerHTML = optionsArrayToHTML.join();
   }
@@ -159,6 +163,7 @@ class Select {
       return await response.json();
     } catch (e) {
       console.error(e);
+      return [];
     }
   }
 
@@ -372,12 +377,15 @@ async function loadFormDataById(id) {
 
 function resetForm(e) {
   e.preventDefault();
+  clearForm(true);
+}
+
+function clearForm(resetUrl = false) {
   voivodeshipsController.clearSelectedOption();
   citiesController.clearSelectedOption();
   addressController.clearValue();
   notesController.clearValue();
-
-  rewriteUrl();
+  if (resetUrl) rewriteUrl();
 }
 
 function submitForm(e) {
@@ -406,9 +414,7 @@ function submitForm(e) {
     Address: `${voivodeshipName},${cityName},${addressValue}`,
     Notes: notesValue,
   };
-
-  console.log(payload);
-
+  clearForm(true);
   addNote(payload);
 }
 
