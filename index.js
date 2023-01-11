@@ -344,24 +344,29 @@ async function loadFormDataById(id) {
   if (!id || id === selectedNote?.Id) return;
   const desiredNote = tableController.getData().find((note) => note.Id === id);
   if (desiredNote) {
-    const [receivedVoivodeshipName, receivedCityName, receivedAddress] =
+    // ! ZMIENIŁEM KOLEJNOŚĆ, W API OTRZYMUJEMY ADDRESS I VOIVODESHIP ODWROTNIE.
+    const [receivedAddress, receivedCityName, receivedVoivodeshipName] =
       desiredNote.Address.split(", ");
     const receivedNotes = desiredNote.Notes;
 
     const desiredVoivodeship = voivodeshipsController
       .getData()
       .find((voivodeship) => voivodeship.name === receivedVoivodeshipName);
-    const desiredVoivodeshipId = desiredVoivodeship["id"];
-    voivodeshipsController.setValue(desiredVoivodeship);
+    if (desiredVoivodeship) {
+      const desiredVoivodeshipId = desiredVoivodeship["id"];
+      voivodeshipsController.setValue(desiredVoivodeship);
 
-    const desiredCity = citiesController
-      .getAvailableCities()
-      [desiredVoivodeshipId].find((city) => city.name === receivedCityName);
-    citiesController.renderCitiesById(desiredVoivodeshipId);
-    citiesController.setValue(desiredCity);
+      const desiredCity = citiesController
+        .getAvailableCities()
+        [desiredVoivodeshipId].find((city) => city.name === receivedCityName);
+      citiesController.renderCitiesById(desiredVoivodeshipId);
+      citiesController.setValue(desiredCity);
 
-    addressController.setValue(receivedAddress);
-    notesController.setValue(receivedNotes);
+      addressController.setValue(receivedAddress);
+      notesController.setValue(receivedNotes);
+    } else {
+      alert("Error with data!");
+    }
   }
 }
 
@@ -398,7 +403,7 @@ function submitForm(e) {
   }
 
   const payload = {
-    Address: `${voivodeshipName},${cityName},${addressValue}`,
+    Address: `${addressValue}, ${cityName}, ${voivodeshipName}`,
     Notes: notesValue,
   };
 
@@ -453,16 +458,15 @@ async function addNote(payload) {
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/inst6/",
       {
         method: "POST",
+        mode: "cors",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: JSON.stringify(payload),
       }
     );
 
-    const content = await response?.json();
-
-    if (content.length) {
+    if (response.status == 200) {
       tableController.initTableDataCells();
     }
   } catch (e) {
@@ -475,16 +479,16 @@ var mockEntries = [
   {
     Id: "1",
     Notes: "Witaj swit! 1",
-    Address: "mazowieckie, Warszawa, pl. Defilad 1",
+    Address: "pl. Defilad 1, Warszawa, mazowieckie",
   },
   {
     Id: "2",
     Notes: "Następna stacja...",
-    Address: "mazowieckie, Warszawa, pole Mokotowskie",
+    Address: "pole Mokotowskie, Warszawa, mazowieckie",
   },
   {
     Id: "3",
     Notes: "Poznań - miasto doznań",
-    Address: "wielkopolskie, Poznań, pl. Defilad 3",
+    Address: "pl. Defilad 3, Poznań, wielkopolskie",
   },
 ];
