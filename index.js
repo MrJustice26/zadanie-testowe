@@ -403,7 +403,7 @@ function submitForm(e) {
   }
 
   const payload = {
-    Address: `${addressValue}, ${cityName}, ${voivodeshipName}`,
+    Address: `${voivodeshipName},${cityName},${addressValue}`,
     Notes: notesValue,
   };
 
