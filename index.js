@@ -312,14 +312,15 @@ async function addNotes(payload) {
       "https://wavy-media-proxy.wavyapps.com/investors-notebook/inst6/",
       {
         method: "POST",
+        mode: "cors",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: JSON.stringify(payload),
       }
     );
 
-    const content = await response?.json();
+    const content = await response;
     console.log(content);
   } catch (e) {
     console.error(e);
