@@ -43,17 +43,18 @@ const areILeafletNotes = computed(() => leafletNotes.value.length);
 
 const fetchRecentNotes = async () => {
   try {
-    const response = await fetch(
-      "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
-    );
-    const receivedData = await response.json();
-
-    // W Przypadku gdy serwer nie zadziała.
-    if (receivedData[0]?.errorCode) {
-      notes.value = mockEntries;
-    } else {
-      notes.value = receivedData;
-    }
+    // const response = await fetch(
+    //   "https://wavy-media-proxy.wavyapps.com/investors-notebook/?action=get_entries"
+    // );
+    // const receivedData = await response.json();
+    // console.log(receivedData);
+    // // W Przypadku gdy serwer nie zadziała.
+    // if (receivedData[0]?.errorCode) {
+    //   notes.value = mockEntries;
+    // } else {
+    //   notes.value = receivedData;
+    // }
+    notes.value = mockEntries;
   } catch (e) {
     console.error(e);
   }
