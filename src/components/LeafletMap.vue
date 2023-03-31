@@ -41,7 +41,7 @@ const loadPoints = () => {
 
     leafletData.value.unshift(marker);
 
-    marker.addTo(map).bindPopup(note.Notes).openPopup();
+    marker.addTo(map!).bindPopup(note.Notes).openPopup();
   });
 };
 
